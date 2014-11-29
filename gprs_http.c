@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
- #include <stdlib.h>
+#include <stdlib.h>
 #include "em_leuart.h"
 #include "em_gpio.h"
 #include "gprs.h"             
