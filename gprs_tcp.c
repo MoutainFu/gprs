@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
- #include <stdlib.h>
+#include <stdlib.h>
 #include "em_leuart.h"
 #include "em_gpio.h"
 #include "gprs.h"             
@@ -13,37 +13,37 @@
 #define TCPIP_SERVER_PORT   "8082"
 
 
-unsigned  char tcpip_config_ok=0;
-unsigned  char http_conect_ok=0;
-unsigned char  tcpip_config_step = 0;
-unsigned char http_config_state=0; 
-unsigned char http_send_cmplt=0;
+unsigned char ppp_config_ok=0;
+unsigned char ppp_config_step = 0;
+unsigned char tcp_conect_ok=0;
+unsigned char tcp_config_state=0;
+unsigned char tcp_send_cmplt=0;
 
 static  char tcpip_buf[500]={0};
 
 char pGprs[] = "device-id=7&device-type=ring&data=";
 
-void tcpip_config(void)
+void ppp_config(void)
 {  
        
-    switch (tcpip_config_step)
+    switch (ppp_config_step)
     {
         case 0:
             free_rom_buf(rx_buf,sizeof(rx_buf));
             leuart_sent_string("AT\r\n");
             leuart_tick = msTicks;            
-            tcpip_config_step = 1; 
+            ppp_config_step = 1;
             break;
         case 1:
             if((msTicks - leuart_tick) > 3000)
             {        
                 if(strstr(rx_buf, "OK") == NULL)                   
                 {
-                    tcpip_config_step = 0;
+                    ppp_config_step = 0;
                 }
                 else
                 {
-                    tcpip_config_step = 2; 
+                    ppp_config_step = 2;
                                    
                 } 
                 free_rom_buf(rx_buf,sizeof(rx_buf));                         
@@ -53,7 +53,7 @@ void tcpip_config(void)
 //===================================================            
         case 2:
             leuart_sent_string("AT+CCID\r\n");
-            tcpip_config_step = 3;
+            ppp_config_step = 3;
             leuart_tick = msTicks;
             break;        
         case 3:
@@ -61,11 +61,11 @@ void tcpip_config(void)
             {
                 if(strstr(rx_buf, "OK") == NULL)
                 {
-                    tcpip_config_step = 2;
+                    ppp_config_step = 2;
                 }
                 else
                {
-                tcpip_config_step = 4;
+                ppp_config_step = 4;
                                                                       
                }
                free_rom_buf(rx_buf,strlen(rx_buf));
@@ -74,7 +74,7 @@ void tcpip_config(void)
 //========================================================            
         case 4:
             leuart_sent_string("AT+CSQ\r\n");
-            tcpip_config_step = 5;
+            ppp_config_step = 5;
             leuart_tick = msTicks;
             break;
         case 5:
@@ -82,11 +82,11 @@ void tcpip_config(void)
             {
                 if(strstr(rx_buf, "OK") == NULL)
                 {
-                    tcpip_config_step = 4;
+                    ppp_config_step = 4;
                 }
                 else
                 {
-                tcpip_config_step = 6;            
+                ppp_config_step = 6;
                 
                 }
                 free_rom_buf(rx_buf,strlen(rx_buf));
@@ -96,7 +96,7 @@ void tcpip_config(void)
 //=====================================================            
         case 6:
             leuart_sent_string("AT+CREG?\r\n");
-            tcpip_config_step = 7;
+            ppp_config_step = 7;
             leuart_tick = msTicks;
             break;
         case 7:
@@ -104,11 +104,11 @@ void tcpip_config(void)
             {
                 if(strstr(rx_buf, "OK") == NULL)
                 {
-                    tcpip_config_step = 6;
+                    ppp_config_step = 6;
                 }
                 else
                 {
-                tcpip_config_step = 8;
+                ppp_config_step = 8;
                     
                 }
                 free_rom_buf(rx_buf,strlen(rx_buf));
@@ -118,7 +118,7 @@ void tcpip_config(void)
 //=================================================================
         case 8:
             leuart_sent_string("AT+CGDCONT=1,\"IP\",\"cmnet\"\r\n");
-            tcpip_config_step = 9;
+            ppp_config_step = 9;
             leuart_tick = msTicks;
             break;
         case 9:
@@ -126,11 +126,11 @@ void tcpip_config(void)
             {
                 if(strstr(rx_buf, "OK") == NULL)
                 {
-                    tcpip_config_step = 8;
+                    ppp_config_step = 8;
                 }
                 else
                 {
-                tcpip_config_step = 10;
+                ppp_config_step = 10;
                                      
                 }
                 free_rom_buf(rx_buf,strlen(rx_buf));
@@ -142,7 +142,7 @@ void tcpip_config(void)
  //=================================================================           
         case 10:
             leuart_sent_string("AT+CGATT?\r\n");
-            tcpip_config_step = 11;
+            ppp_config_step = 11;
             leuart_tick = msTicks;
             break;
         case 11:
@@ -150,12 +150,12 @@ void tcpip_config(void)
             {
                 if(strstr(rx_buf, "+CGATT: 0") == NULL)
                 {
-                    tcpip_config_step = 14;
+                    ppp_config_step = 14;
                 }
                 else
                 {
-                 tcpip_config_step = 12;                
-                 //tcpip_config_ok = 1;                  
+                 ppp_config_step = 12;
+                 //ppp_config_ok = 1;
                 }
                 free_rom_buf(rx_buf,strlen(rx_buf));
             }            
@@ -167,7 +167,7 @@ void tcpip_config(void)
             //sprintf(tcpip_buf, "AT+TCPSETUP=0,%s,%s\x0D\x0A", TCPIP_SERVER_IPADDR, TCPIP_SERVER_PORT);
             leuart_sent_string("AT+CGATT=1\r\n");
             //leuart_sent_string("AT+TCPSETUP=0,115.29.140.120,8082\r\n");
-            tcpip_config_step = 13;
+            ppp_config_step = 13;
             leuart_tick = msTicks;
             break;
         case 13:
@@ -175,11 +175,11 @@ void tcpip_config(void)
             {
                 if(strstr(rx_buf, "OK") == NULL)
                 {
-                    tcpip_config_step = 8;//附着失败返回网络参数设置
+                    ppp_config_step = 8;//附着失败返回网络参数设置
                 }
                 else
                 {
-                    tcpip_config_step = 14;                                                          
+                    ppp_config_step = 14;
                 }
                 free_rom_buf(rx_buf,strlen(rx_buf));
             }            
@@ -187,7 +187,7 @@ void tcpip_config(void)
 //=================================================================
         case 14:
             leuart_sent_string("AT+XIIC=1\r\n");
-            tcpip_config_step = 15;
+            ppp_config_step = 15;
             leuart_tick = msTicks;
             break;
         case 15:
@@ -195,11 +195,11 @@ void tcpip_config(void)
             {
                 if(strstr(rx_buf, "OK") == NULL)
                 {
-                    tcpip_config_step = 14;
+                    ppp_config_step = 14;
                 }
                 else
                 {
-                tcpip_config_step = 16;
+                ppp_config_step = 16;
                                   
                 }
                 free_rom_buf(rx_buf,strlen(rx_buf));
@@ -209,7 +209,7 @@ void tcpip_config(void)
 //=================================================================
         case 16:
             leuart_sent_string("AT+XIIC?\r\n");
-            tcpip_config_step = 17;
+            ppp_config_step = 17;
             leuart_tick = msTicks;
             break;
         case 17:
@@ -217,13 +217,13 @@ void tcpip_config(void)
             {
                 if(strstr(rx_buf, "0,0.0.0.0") == NULL)
                 {
-                    tcpip_config_step = 0;
-                    tcpip_config_ok = 1; 
+                    ppp_config_step = 0;
+                    ppp_config_ok = 1;
                     
                 }
                 else
                 {
-                    tcpip_config_step = 14;
+                    ppp_config_step = 14;
           
                 }
                 free_rom_buf(rx_buf,strlen(rx_buf));
@@ -238,16 +238,16 @@ void tcpip_config(void)
 
 void tcp_Send_test(void)
 {
-    static unsigned char http_send_step = 0;
-    static unsigned char http_send_cnt = 0;
+    static unsigned char tcp_send_step = 0;
+    static unsigned char tcp_send_cnt = 0;
     unsigned int k =0;
     
-    switch (http_send_step)
+    switch (tcp_send_step)
     {
         
     case 0:
          leuart_sent_string("AT+TCPSETUP=0,115.29.140.120,8082\r\n");  
-         http_send_step = 1;
+         tcp_send_step = 1;
          leuart_tick = msTicks;
         break;            
     
@@ -256,12 +256,12 @@ void tcp_Send_test(void)
             {
                 if(strstr(rx_buf, "+TCPSETUP:0,OK") == NULL)
                 {                                    
-                   http_send_step = 0; 
-                   tcpip_config_ok = 0;                                        
+                   tcp_send_step = 0;
+                   ppp_config_ok = 0;
                 }
                 else
                 {
-                   http_send_step = 2;
+                   tcp_send_step = 2;
                 }
                 free_rom_buf(rx_buf,strlen(rx_buf));
             } 
@@ -269,7 +269,7 @@ void tcp_Send_test(void)
             
         case 2:
              leuart_sent_string("AT+IPSTATUS=0\r\n"); 
-             http_send_step = 3;
+             tcp_send_step = 3;
              leuart_tick = msTicks;
             break;
         
@@ -278,11 +278,11 @@ void tcp_Send_test(void)
                 {
                     if(strstr(rx_buf, "+IPSTATUS:0,CONNECT,TCP,4096") == NULL)
                     {                        
-                       http_send_step = 0;       
+                       tcp_send_step = 0;
                     }
                    else
                    {                        
-                        http_send_step = 4; 
+                        tcp_send_step = 4;
                     }
                     free_rom_buf(rx_buf,strlen(rx_buf));
                 }            
@@ -290,7 +290,7 @@ void tcp_Send_test(void)
     
     case 4:
          leuart_sent_string("AT+TCPSEND=0,2035\r\n"); //34+ x +1
-         http_send_step = 5;
+         tcp_send_step = 5;
         leuart_tick = msTicks;
         break;
     
@@ -299,11 +299,11 @@ void tcp_Send_test(void)
             {
                 if(strstr(rx_buf, ">") == NULL)
                 {                                                  
-                    http_send_step = 0; 
+                    tcp_send_step = 0;
                 }
                 else{
                                        
-                http_send_step = 6;
+                tcp_send_step = 6;
                 }
                 free_rom_buf(rx_buf,strlen(rx_buf));
             }                
@@ -318,11 +318,11 @@ void tcp_Send_test(void)
                 leuart_sent_string(tcpip_buf);
                 
             }                    
-             sprintf(tcpip_buf, "%2d%3d", http_send_cnt,disp_filt_pulse);
+             sprintf(tcpip_buf, "%2d%3d", tcp_send_cnt,disp_filt_pulse);
 
              leuart_sent_string(tcpip_buf);
                        
-        http_send_step = 7;
+        tcp_send_step = 7;
         leuart_tick = msTicks;
         
         break;
@@ -336,9 +336,9 @@ void tcp_Send_test(void)
                 }
                 else
                 {                
-                    http_send_cmplt = 1;data_is_ok = 0;                                                            
+                    tcp_send_cmplt = 1;data_is_ok = 0;
                 }     
-                http_send_step = 4;
+                tcp_send_step = 4;
                 free_rom_buf(rx_buf,strlen(rx_buf));
             } 
    
@@ -354,7 +354,7 @@ void tcp_Send_test(void)
 
 void gprs_monit_thread(void)
 {
-   if((gprs_is_ok)&&(!tcpip_config_ok))                      { tcpip_config(); }
+   if((gprs_is_ok)&&(!ppp_config_ok))                     { ppp_config(); }
   
-   if((tcpip_config_ok) && (!http_send_cmplt))               { tcp_Send_test();}    
+   if((ppp_config_ok) && (!tcp_send_cmplt))               { tcp_Send_test();}
 }  //&&(data_is_ok)
