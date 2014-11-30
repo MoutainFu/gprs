@@ -15,8 +15,6 @@
 
 unsigned char ppp_config_ok=0;
 unsigned char ppp_config_step = 0;
-unsigned char tcp_conect_ok=0;
-unsigned char tcp_config_state=0;
 unsigned char tcp_send_cmplt=0;
 
 static  char tcpip_buf[500]={0};
